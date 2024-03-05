@@ -4,7 +4,7 @@ const cors = require("cors");
 
 const app = express();
 const PORT = 5000;
-
+console.log("hello")
 // mongodb connect
 mongoose.connect("mongodb://localhost/authentication", {
   useNewUrlParser: true,
