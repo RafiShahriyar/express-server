@@ -1,10 +1,12 @@
 const express = require("express");
 const mongoose = require("mongoose");
+require("dotenv").config();
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
-const PORT = 5000;
-console.log("hello")
+const PORT = process.env.PORT || 5000;
+
 // mongodb connect
 mongoose.connect("mongodb://localhost/authentication", {
   useNewUrlParser: true,
@@ -12,14 +14,18 @@ mongoose.connect("mongodb://localhost/authentication", {
 });
 const db = mongoose.connection;
 
-// route
-const authRoutes = require("./routes/auth");
+// Authentication routes
+const auth = require("./src/routes/auth.routes");
+app.use(express.json());
+app.use(cors());
+
+app.use("/api/auth", auth);
 
 app.use(cors());
 app.use(express.json());
 
-// api routes
-app.use("/api/auth", authRoutes);
+app.get("/", (req, res) => {
+  res.send("Hello All Over the World");
+});
 
-// Start Server
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
