@@ -219,10 +219,78 @@ const forgetPassword = asyncHandler(async (req, res) => {
   }
 });
 
+// Reset Password //////////////////////////////////////////////
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded) {
+      return res.status(403).json({
+        message: "Invalid or expired token",
+      });
+    }
+
+    // Find user by email
+    const user = await userModel.findOne({ email: decoded.email });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Hash new password
+    const hash = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    user.password = hash;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+// Upload Image //////////////////////////////////////////////
+const uploadImage = asyncHandler(async (req, res) => {
+  // Check if user exists
+  const user = await userModel.findOne({ userId: req.params.userId });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  try {
+    // Check if there is a file in the request
+    if (!req.files) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Save the file path to the user document
+    user.profileImage = req.files.path;
+    await user.save();
+
+    return res.status(200).json({
+      message: "Image uploaded successfully",
+      imagePath: req.files.path,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = {
   register,
   login,
   forgetPassword,
+  resetPassword,
   userProfile,
   users,
+  uploadImage,
 };
