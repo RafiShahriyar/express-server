@@ -21,6 +21,7 @@ const register = asyncHandler(async (req, res) => {
 
     //generating userId
     const userId = uuidv4();
+    const verificationToken = jwt.sign({ email: email }, process.env.JWT_SECRET, { expiresIn: "1d" });
     console.log(userId, "userId");
     //using bcrypt to hash the password sent from the user
     const hash = await bcrypt.hash(password, 10);
@@ -37,6 +38,40 @@ const register = asyncHandler(async (req, res) => {
 
     //saving the data to the mongodb user collection
     const response = await user.save();
+    // Send verification email to user
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    var mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: "Email Verification",
+      html: `<h2>Please click on given link to verify your email</h2>
+            <p>${process.env.CLIENT_URL}verify-user/${verificationToken}</p>`,
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        return res.status(500).json({
+          message: error.message,
+        });
+      } else {
+        return res.status(200).json({
+          message: "User registered successfully",
+          token: verificationToken,
+        });
+      }
+    });
+    
+
 
     return res.status(201).json({
       message: "user successfully created!",
@@ -56,60 +91,117 @@ const register = asyncHandler(async (req, res) => {
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  //created a variable to assign the user
-  let getUser;
+  try {
+    const user = await userModel.findOne({ email });
 
-  //verifying that the user with the email exist or not
-  userModel
-    .findOne({
-      email: email,
-    })
-    .then((user) => {
-      if (!user) {
-        //if user does not exist responding Authentication Failed
-        return res.status(401).json({
-          message: "Authentication Failed",
-        });
-      }
-      //assigned the user to getUser variable
-      getUser = user;
-      /*
-    Then compare the password from the req.body and the hashed password on the database 
-    using the bcrypt.compare built in function
-    */
-      return bcrypt.compare(password, user.password);
-    })
-    .then((response) => {
-      if (!response) {
-        return res.status(401).json({
-          message: "Authentication Failed",
-        });
-      } else {
-        let jwtToken = jwt.sign(
-          {
-            email: getUser.email,
-            userId: getUser.userId,
-          },
-          //Signin the token with the JWT_SECRET in the .env
-          process.env.JWT_SECRET,
-          {
-            expiresIn: "1h",
-          }
-        );
-        return res.status(200).json({
-          accessToken: jwtToken,
-          userId: getUser.userId,
-          userType: getUser.userType,
-        });
-      }
-    })
-    .catch((err) => {
+    if (!user) {
       return res.status(401).json({
-        message: err.message,
-        success: false,
+        message: "Authentication Failed",
       });
+    }
+
+    if (user.verification !== "verified") {
+      return res.status(401).json({
+        message: "User not verified",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: "Authentication Failed",
+      });
+    }
+
+    const jwtToken = jwt.sign(
+      {
+        email: user.email,
+        userId: user.userId,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
+
+    return res.status(200).json({
+      accessToken: jwtToken,
+      userId: user.userId,
+      userType: user.userType,
+      userName: user.fullName,
     });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+      success: false,
+    });
+  }
 });
+// const login = asyncHandler(async (req, res) => {
+//   const { email, password } = req.body;
+
+//   //created a variable to assign the user
+//   let getUser;
+
+//   //verifying that the user with the email exist or not
+//   userModel
+//     .findOne({
+//       email: email,
+//     })
+//     .then((user) => {
+//       if (!user) {
+//         //if user does not exist responding Authentication Failed
+//         return res.status(401).json({
+//           message: "Authentication Failed",
+//         });
+//       }
+
+//       if (user.verification !== "verified") {
+//         return res.status(401).json({
+//           message: "User not verified",
+//         });
+//       }
+//       //assigned the user to getUser variable
+//       getUser = user;
+//       /*
+//     Then compare the password from the req.body and the hashed password on the database 
+//     using the bcrypt.compare built in function
+//     */
+//       return bcrypt.compare(password, user.password);
+//     })
+//     .then((response) => {
+//       if (!response) {
+//         return res.status(401).json({
+//           message: "Authentication Failed",
+//         });
+//       } else {
+//         let jwtToken = jwt.sign(
+//           {
+//             email: getUser.email,
+//             userId: getUser.userId,
+//           },
+//           //Signin the token with the JWT_SECRET in the .env
+//           process.env.JWT_SECRET,
+//           {
+//             expiresIn: "1h",
+//           }
+//         );
+
+//         return res.status(200).json({
+//           accessToken: jwtToken,
+//           userId: getUser.userId,
+//           userType: getUser.userType,
+//         });
+//       }
+//     })
+//     .catch((err) => {
+//       return res.status(401).json({
+//         message: err.message,
+//         success: false,
+//       });
+//     });
+// });
 
 // USER PROFILE //////////////////////////////////////////////
 const userProfile = asyncHandler(async (req, res, next) => {
@@ -126,7 +218,7 @@ const userProfile = asyncHandler(async (req, res, next) => {
       });
     } else {
       return res.status(200).json({
-        messgae: `user ${verifyUser.fullName}`,
+        message: `user ${verifyUser.fullName}`,
         success: true,
       });
     }
@@ -196,7 +288,7 @@ const forgetPassword = asyncHandler(async (req, res) => {
         to: email,
         subject: "Reset Password",
         html: `<h2>Please click on given link to reset your password</h2>
-                <p>${process.env.CLIENT_URL}/resetpassword/${jwtToken}</p>`,
+                <p>${process.env.CLIENT_URL}reset-password/${jwtToken}</p>`,
       };
 
       transporter.sendMail(mailOptions, function (error, info) {
@@ -219,35 +311,35 @@ const forgetPassword = asyncHandler(async (req, res) => {
   }
 });
 
-// Reset Password //////////////////////////////////////////////
+const resetpassword = asyncHandler(async (req, res) => {
 
-const resetPassword = asyncHandler(async (req, res) => {
-  const { token, newPassword } = req.body;
-
+  
+  const { password, confirmPassword, token} = req.body;
+  console.log(token);
+  
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (!decoded) {
-      return res.status(403).json({
-        message: "Invalid or expired token",
-      });
-    }
+    console.log(decoded);
 
-    // Find user by email
-    const user = await userModel.findOne({ email: decoded.email });
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
+    const userBeforeUpdate = await userModel.findOne({ email: decoded.email });
+    console.log("User before password update:", userBeforeUpdate);
+
+      // Check if newPassword and confirmPassword match
+      if (password !== confirmPassword) {
+        return res.status(400).json({
+            message: "Passwords do not match.",
+        });
     }
 
     // Hash new password
-    const hash = await bcrypt.hash(newPassword, 10);
-
-    // Update user password
-    user.password = hash;
-    await user.save();
-
+    const hash = await bcrypt.hash(password, 10);
+    // Update password
+    console.log("New hashed password:", hash);
+    await userModel.findOneAndUpdate(
+      { email: decoded.email },
+      { $set: { password: hash } }
+    );
     return res.status(200).json({
       message: "Password updated successfully",
     });
@@ -258,39 +350,84 @@ const resetPassword = asyncHandler(async (req, res) => {
   }
 });
 
-// Upload Image //////////////////////////////////////////////
-const uploadImage = asyncHandler(async (req, res) => {
-  // Check if user exists
-  const user = await userModel.findOne({ userId: req.params.userId });
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
+const verifyUser = asyncHandler(async (req, res) => {
+  const { token } = req.body;
   try {
-    // Check if there is a file in the request
-    if (!req.files) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-
-    // Save the file path to the user document
-    user.profileImage = req.files.path;
-    await user.save();
-
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log(decoded);
+    const user = await userModel.findOneAndUpdate(
+      { email: decoded.email },
+      { $set: { verification: "verified" } }
+    );
+    console.log(user);
     return res.status(200).json({
-      message: "Image uploaded successfully",
-      imagePath: req.files.path,
+      message: "User verified successfully",
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({
+      error: error.message,
+    });
   }
 });
+
+const resendVerification = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  try {
+    const verifyEmail = await userModel.findOne({ email: email });
+    if (!verifyEmail) {
+      return res.status(403).json({
+        message: "Email not found",
+      });
+    } else {
+      const verificationToken = jwt.sign({ email: email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+      var transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL,
+          pass: process.env.PASSWORD,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+      });
+
+      var mailOptions = {
+        from: process.env.EMAIL,
+        to: email,
+        subject: "Email Verification",
+        html: `<h2>Please click on this new given link to verify your email</h2>
+                <p>${process.env.CLIENT_URL}verify-user/${verificationToken}</p>`,
+      };
+
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          return res.status(500).json({
+            message: error.message,
+          });
+        } else {
+          return res.status(200).json({
+            message: "Verification link sent to your email",
+            token: verificationToken,
+          });
+        }
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+}
+);
+
 
 module.exports = {
   register,
   login,
   forgetPassword,
-  resetPassword,
   userProfile,
   users,
-  uploadImage,
+  resetpassword,
+  resendVerification,
+  verifyUser,
 };

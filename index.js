@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+// const mongoose2 = require("mongoose");
 require("dotenv").config();
 const cors = require("cors");
 const path = require("path");
@@ -13,6 +14,15 @@ mongoose.connect("mongodb://localhost/authentication", {
   useUnifiedTopology: true,
 });
 const db = mongoose.connection;
+
+
+// mongoose.connect("mongodb+srv://rafi:1234@atlascluster.i7doaey.mongodb.net/CD", {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// });
+// const db = mongoose.connection;
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Authentication routes
 const auth = require("./src/routes/auth.routes");

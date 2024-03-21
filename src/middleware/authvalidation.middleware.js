@@ -42,23 +42,23 @@ const loginValidation = async (req, res, next) => {
   }).catch((err) => console.log(err));
 };
 
-const multer = require("multer");
-const UPLOAD_DIR =
-  "./Users/nafis/OneDrive/Desktop/BRAC/CSE471/Project/express-server/public/images/users";
+const multer = require('multer');
+const UPLOAD_DIR = process.env.UPLOAD_DIR || '/public/images/users';
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix);
-  },
-});
+    destination: function (req, file, cb) {
+      cb(null, UPLOAD_DIR)
+    },
+    filename: function (req, file, cb) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+      cb(null, file.fieldname + '-' + uniqueSuffix)
+    }
+  })
 
-const upload = multer({ storage: storage });
+  const upload = multer({ storage: storage })
+
 
 module.exports = {
   registerValidation,
   loginValidation,
-  upload,
+  upload
 };

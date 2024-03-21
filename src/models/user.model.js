@@ -19,6 +19,10 @@ const userSchema = mongoose.Schema({
   userType: {
     type: String,
   },
+  verification: {
+    type: String,
+    default: "not verified",
+  },
 });
 
 module.exports = mongoose.model("User", userSchema);
