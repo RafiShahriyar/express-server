@@ -23,6 +23,8 @@ const userSchema = mongoose.Schema({
     type: String,
     default: "not verified",
   },
-});
+},
+{ timestamps: true }
+);
 
 module.exports = mongoose.model("User", userSchema);

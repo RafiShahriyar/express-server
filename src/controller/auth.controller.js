@@ -118,6 +118,7 @@ const login = asyncHandler(async (req, res) => {
       {
         email: user.email,
         userId: user.userId,
+        userMId: user._id,
       },
       process.env.JWT_SECRET,
       {
@@ -130,6 +131,7 @@ const login = asyncHandler(async (req, res) => {
       userId: user.userId,
       userType: user.userType,
       userName: user.fullName,
+      userMId: user._id,
     });
   } catch (error) {
     return res.status(500).json({
