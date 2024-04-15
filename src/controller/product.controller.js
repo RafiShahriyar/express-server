@@ -64,7 +64,7 @@ const uploadProduct = async (req, res) => {
 // Get all products
 const getProducts = async (req, res) => {
     try {
-      const items = await Items.find({}, '-_id id image product category price specifications');
+      const items = await Items.find({}, '_id id image product category price specifications stock');
         res.json(items);
       
     } catch (error) {

@@ -4,6 +4,7 @@ const router = express.Router();
 // Import the product model
 const { ObjectId } = require('mongodb');
 const Order = require('../models/order.model');
+const ProductDetails = require('../models/product.model');
 
 
 //sslcommerz init
@@ -27,10 +28,11 @@ const tran_id = new ObjectId().toString();
 router.post('/order', async(req, res) => {
     const { userId, userName, products } = req.body;
     console.log(userId, userName, products);
+    const tran_id = new ObjectId().toString();
     // Calculate total price
     const totalPrice = products.reduce((acc, product) => {
         // Convert price to number and add to accumulator
-        return acc + parseInt(product.price);
+        return acc + (parseInt(product.price) * product.quantity);
     }, 0);
     const data = {
         total_amount: totalPrice,
@@ -72,13 +74,15 @@ router.post('/order', async(req, res) => {
         console.log('Redirecting to: ', GatewayPageURL);
         res.send({ url: GatewayPageURL });
 
+
         // Optionally, you can save the order details here before redirection
         const finalOrder = new Order({ 
             userId: userId,
             userName: userName,
             totalPrice: totalPrice,
             tran_id: tran_id,
-            status: 'Pending'
+            status: 'Pending',
+            products: products.map(product => ({ productId: product._id, quantity: product.quantity }))
         });
         finalOrder.save().then(savedOrder => {
             console.log('Order saved:', savedOrder);
@@ -87,17 +91,20 @@ router.post('/order', async(req, res) => {
         });
     });
 });
+
     router.post("/success/:transactionId", async (req, res,next) => {
         console.log(req.params.transactionId)
-        const savedOrder = await Order.findOneAndUpdate({ tran_id: req.params.transactionId }, { $set: { status: 'Success' } });
-        console.log(savedOrder);
-        // if (savedOrder && savedOrder.modifiedCount > 0) {
-        //     console.log("Order status updated successfully.")
-        //     res.redirect("http://localhost:3000/success");
-        // } else {
-        //     res.status(500).send("Failed to update order status.");
-        // }
+        const savedOrder = await Order.findOneAndUpdate(
+            { tran_id: req.params.transactionId },
+            { $set: { status: 'Success' } }
+        ).populate('products.productId');
+
         if (savedOrder) {
+            // Update the stock for each product in the order
+            for (const product of savedOrder.products) {
+                // Update the product's stock
+                await ProductDetails.updateOne({ _id: product.productId._id }, { $inc: { stock: -product.quantity } });
+            }
             console.log("Order status updated successfully.")
             res.redirect(`http://localhost:3000/payment/success/${req.params.transactionId}`);
         }
@@ -105,8 +112,8 @@ router.post('/order', async(req, res) => {
             res.status(500).send("Failed to update order status.");
         };
 
-    
-    
+
+
     });
  
     router.post("/fail/:transactionId", async (req, res) => {
