@@ -70,10 +70,16 @@ const makeOffer = asyncHandler(async (req, res) => {
       });
   
       const receiverSocketId = getRecieverSocketId(receiverId);
+      const senderSocketId = getSenderSocketId(senderId);
+
       console.log("New Offer: ", newOffer);
       if (receiverSocketId) {
           io.to(receiverSocketId).emit('newMessage', newMessage);
           io.to(receiverSocketId).emit('newOffer', newOffer);
+      }
+
+      if (senderSocketId) {
+          io.to(senderSocketId).emit('newOffer', newOffer);
       }
 
     } catch (error) {
@@ -216,15 +222,32 @@ const updateOfferAmount = asyncHandler(async (req, res) => {
 const acceptOffer = asyncHandler(async (req, res) => {
     try {
         const { offerId: offerId } = req.params;
+        // const senderId = req.user._id;
         console.log(offerId)
         const objectofferId = new mongoose.Types.ObjectId(offerId);
         const offer = await Offer.findOne({ _id: objectofferId }).populate({path: 'product', select: 'uploadedBy _id product price'});
+        
+        const message = await Message.findOne({ offer: objectofferId });
+        const senderId = message.senderId;
+        const receiverId = message.receiverId;
+
         console.log(offer);    
         if (!offer) {
             return res.status(404).json({ message: 'Offer not found' });
         }
         offer.status = 'accepted';
         await offer.save();
+
+        const receiverSocketId = getRecieverSocketId(receiverId);
+        const senderSocketId = getSenderSocketId(senderId);
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('offerStatusChanged');
+        }
+        if (senderSocketId) {
+            io.to(senderSocketId).emit('offerStatusChanged');
+        }
+
         res.status(200).json(offer);
     } catch (error) {
         console.error(error);
@@ -243,6 +266,20 @@ const declineOffer = asyncHandler(async (req, res) => {
         }
         offer.status = 'declined';
         await offer.save();
+
+        const message = await Message.findOne({ offer: objectofferId });
+        const senderId = message.senderId;
+        const receiverId = message.receiverId;
+
+        const receiverSocketId = getRecieverSocketId(receiverId);
+        const senderSocketId = getSenderSocketId(senderId);
+
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit('offerStatusChanged');
+        }
+        if (senderSocketId) {
+            io.to(senderSocketId).emit('offerStatusChanged');
+        }
         res.status(200).json(offer);
     } catch (error) {
         console.error(error);
