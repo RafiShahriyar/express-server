@@ -47,13 +47,9 @@ app.use("/api/message", message);
 const offer = require("./src/routes/offer.routes");
 app.use("/api/offer", offer);
 
-<<<<<<< Updated upstream
-=======
 const forum = require("./src/routes/forum.routes");
 app.use("/api/forum", forum);
 
-
->>>>>>> Stashed changes
 //Fetch all user Routes
 const users = require("./src/routes/user.routes");
 app.use("/api/users", users);
@@ -67,5 +63,9 @@ app.use("/api/allUsers", allUsers);
 app.get("/", (req, res) => {
   res.send("Hello All Over the World");
 });
+
+// Search Route
+const search = require("./src/routes/search.routes");
+app.use("/api/search", search);
 
 server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
