@@ -68,4 +68,8 @@ app.get("/", (req, res) => {
 const search = require("./src/routes/search.routes");
 app.use("/api/search", search);
 
+// Order History Route
+const orderHistory = require("./src/routes/order.routes");
+app.use("/api/order-history", orderHistory);
+
 server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
