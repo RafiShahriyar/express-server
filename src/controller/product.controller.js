@@ -30,11 +30,13 @@ const Review = require("../models/review.model");
 //     };
 const uploadProduct = async (req, res) => {
   try {
-    const { product, category, price, uploadedBy } = req.body;
+    const { product, category, price, uploadedBy, stock } = req.body;
     const imageName = req.file.filename;
 
     // Manually parse specifications from request body
     const specifications = JSON.parse(req.body.specifications);
+    const keySpecifications = JSON.parse(req.body.keySpecifications);
+    console.log(keySpecifications);
 
     // Create a new product
     const newProduct = new Items({
@@ -43,8 +45,10 @@ const uploadProduct = async (req, res) => {
       category,
       price,
       specifications: specifications, // Add specifications to product
+      keySpecifications: keySpecifications,
       image: imageName,
       uploadedBy,
+      stock,
     });
 
     // Save the product

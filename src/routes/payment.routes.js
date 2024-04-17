@@ -16,13 +16,7 @@ const is_live = false //true for live, false for sandbox
 // transaction_id
 const tran_id = new ObjectId().toString();
 
-// Handle order
-// router.post("/success/:transactionId", async (req, res, next) => {
-//     console.log(req.params.transactionId);
-//     return res.status(200).json({
-//         data: req.body,
-// });
-// });
+
 
 // Handle order
 router.post('/order', async(req, res) => {
