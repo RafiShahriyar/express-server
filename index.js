@@ -47,6 +47,13 @@ app.use("/api/message", message);
 const offer = require("./src/routes/offer.routes");
 app.use("/api/offer", offer);
 
+<<<<<<< Updated upstream
+=======
+const forum = require("./src/routes/forum.routes");
+app.use("/api/forum", forum);
+
+
+>>>>>>> Stashed changes
 //Fetch all user Routes
 const users = require("./src/routes/user.routes");
 app.use("/api/users", users);

@@ -115,17 +115,6 @@ const deleteMessage = asyncHandler(async (req, res) => {
     }
 });
 
-// const deleteOffer = asyncHandler(async (req, res) => {
-//     try {
-//         const { id: offerId } = req.params;
-//         const objectofferId = new mongoose.Types.ObjectId(offerId);
-//         await Offer.deleteOne({ _id: objectofferId });
-//         res.status(200).json({ message: 'Offer deleted successfully' });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'Error in deleting offer' });
-//     }
-// });
 
 const updateMessage = asyncHandler(async (req, res) => {
     try {

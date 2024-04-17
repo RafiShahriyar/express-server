@@ -20,9 +20,7 @@ const {
 } = require("../controller/auth.controller");
 //Importing the JWT verifyer from auth middleware
 
-// const { uploadProduct, getProducts, deleteProduct, createReview, getReviews, getProductById } = require("../controller/product.controller");
-// const { checkDuplicateReview } = require("../middleware/product.middleware");
-// const upload = require("../middleware/uploadFile");
+
 
 const verifyToken = require("../middleware/auth.middleware");
 
@@ -46,6 +44,7 @@ router.post("/resend-verification", resendVerification);
 //Verify User
 router.post("/verify-user/:token", verifyUser);
 
+<<<<<<< Updated upstream
 // //Upload item route
 // router.post("/upload-item", upload.single("image"), uploadProduct);
 
@@ -61,5 +60,7 @@ router.post("/verify-user/:token", verifyUser);
 
 // // get product by Id
 // router.get("/get-product/:productID", getProductById);
+=======
+>>>>>>> Stashed changes
 
 module.exports = router;

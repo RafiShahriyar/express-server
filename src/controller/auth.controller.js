@@ -181,6 +181,10 @@ const login = asyncHandler(async (req, res) => {
     });
   }
 });
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 
 // USER PROFILE //////////////////////////////////////////////
 const userProfile = asyncHandler(async (req, res, next) => {
