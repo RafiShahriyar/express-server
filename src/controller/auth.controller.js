@@ -21,7 +21,11 @@ const register = asyncHandler(async (req, res) => {
 
     //generating userId
     const userId = uuidv4();
-    const verificationToken = jwt.sign({ email: email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const verificationToken = jwt.sign(
+      { email: email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
     console.log(userId, "userId");
     //using bcrypt to hash the password sent from the user
     const hash = await bcrypt.hash(password, 10);
@@ -70,8 +74,6 @@ const register = asyncHandler(async (req, res) => {
         });
       }
     });
-    
-
 
     return res.status(201).json({
       message: "user successfully created!",
@@ -86,7 +88,44 @@ const register = asyncHandler(async (req, res) => {
 });
 
 //////////////////////////////////////////////
+// UPDATE USER //////////////////////////////////////////////
+const updateUser = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+  console.log(userId, "userId");
+  console.log(req.body);
+  const { userName, phoneNumber } = req.body;
+  console.log(userName, phoneNumber, "fullName, phoneNumber");
 
+  try {
+    // Check if the user exists
+    const existingUser = await userModel.findOne({ userId: userId });
+
+    if (!existingUser) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // Update user data
+    existingUser.fullName = userName;
+    existingUser.phoneNumber = phoneNumber;
+
+    // Save updated user data to the database
+    const updatedUser = await existingUser.save();
+    console.log(updatedUser, "updatedUser");
+    return res.status(200).json({
+      message: "User updated successfully",
+      data: updatedUser,
+      success: true,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+//////////////////////////////////////////////
 // LOGIN //////////////////////////////////////////////
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -131,7 +170,9 @@ const login = asyncHandler(async (req, res) => {
       userId: user.userId,
       userType: user.userType,
       userName: user.fullName,
+      email: user.email,
       userMId: user._id,
+      phoneNumber: user.phoneNumber,
     });
   } catch (error) {
     return res.status(500).json({
@@ -140,70 +181,6 @@ const login = asyncHandler(async (req, res) => {
     });
   }
 });
-// const login = asyncHandler(async (req, res) => {
-//   const { email, password } = req.body;
-
-//   //created a variable to assign the user
-//   let getUser;
-
-//   //verifying that the user with the email exist or not
-//   userModel
-//     .findOne({
-//       email: email,
-//     })
-//     .then((user) => {
-//       if (!user) {
-//         //if user does not exist responding Authentication Failed
-//         return res.status(401).json({
-//           message: "Authentication Failed",
-//         });
-//       }
-
-//       if (user.verification !== "verified") {
-//         return res.status(401).json({
-//           message: "User not verified",
-//         });
-//       }
-//       //assigned the user to getUser variable
-//       getUser = user;
-//       /*
-//     Then compare the password from the req.body and the hashed password on the database 
-//     using the bcrypt.compare built in function
-//     */
-//       return bcrypt.compare(password, user.password);
-//     })
-//     .then((response) => {
-//       if (!response) {
-//         return res.status(401).json({
-//           message: "Authentication Failed",
-//         });
-//       } else {
-//         let jwtToken = jwt.sign(
-//           {
-//             email: getUser.email,
-//             userId: getUser.userId,
-//           },
-//           //Signin the token with the JWT_SECRET in the .env
-//           process.env.JWT_SECRET,
-//           {
-//             expiresIn: "1h",
-//           }
-//         );
-
-//         return res.status(200).json({
-//           accessToken: jwtToken,
-//           userId: getUser.userId,
-//           userType: getUser.userType,
-//         });
-//       }
-//     })
-//     .catch((err) => {
-//       return res.status(401).json({
-//         message: err.message,
-//         success: false,
-//       });
-//     });
-// });
 
 // USER PROFILE //////////////////////////////////////////////
 const userProfile = asyncHandler(async (req, res, next) => {
@@ -221,6 +198,7 @@ const userProfile = asyncHandler(async (req, res, next) => {
     } else {
       return res.status(200).json({
         message: `user ${verifyUser.fullName}`,
+        data: verifyUser,
         success: true,
       });
     }
@@ -314,11 +292,9 @@ const forgetPassword = asyncHandler(async (req, res) => {
 });
 
 const resetpassword = asyncHandler(async (req, res) => {
-
-  
-  const { password, confirmPassword, token} = req.body;
+  const { password, confirmPassword, token } = req.body;
   console.log(token);
-  
+
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -327,11 +303,11 @@ const resetpassword = asyncHandler(async (req, res) => {
     const userBeforeUpdate = await userModel.findOne({ email: decoded.email });
     console.log("User before password update:", userBeforeUpdate);
 
-      // Check if newPassword and confirmPassword match
-      if (password !== confirmPassword) {
-        return res.status(400).json({
-            message: "Passwords do not match.",
-        });
+    // Check if newPassword and confirmPassword match
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: "Passwords do not match.",
+      });
     }
 
     // Hash new password
@@ -381,7 +357,11 @@ const resendVerification = asyncHandler(async (req, res) => {
         message: "Email not found",
       });
     } else {
-      const verificationToken = jwt.sign({ email: email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+      const verificationToken = jwt.sign(
+        { email: email },
+        process.env.JWT_SECRET,
+        { expiresIn: "1d" }
+      );
       var transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -419,13 +399,12 @@ const resendVerification = asyncHandler(async (req, res) => {
       error: error.message,
     });
   }
-}
-);
-
+});
 
 module.exports = {
   register,
   login,
+  updateUser,
   forgetPassword,
   userProfile,
   users,

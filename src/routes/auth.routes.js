@@ -10,6 +10,7 @@ const {
 const {
   login,
   register,
+  updateUser,
   forgetPassword,
   userProfile,
   users,
@@ -25,12 +26,12 @@ const {
 
 const verifyToken = require("../middleware/auth.middleware");
 
-
-
 //Register route with register validation
 router.post("/register", registerValidation, register);
 //Login route with register validation
 router.post("/login", loginValidation, login);
+//Update user route
+router.post("/update-user", updateUser);
 //Forget Password
 router.post("/forgot-password", forgetPassword);
 
@@ -47,7 +48,6 @@ router.post("/verify-user/:token", verifyUser);
 
 // //Upload item route
 // router.post("/upload-item", upload.single("image"), uploadProduct);
-
 
 // // Get all items route
 // router.get("/get-item", getProducts);
