@@ -90,73 +90,12 @@ const makeOffer = asyncHandler(async (req, res) => {
   });
 
 
-// const getOffers = asyncHandler(async (req, res) => {
-//   try {
-//     const { selectedUserId: userToChatId } = req.params;
-//     const senderId = req.user._id;
-//     const userToChatObjectId = new mongoose.Types.ObjectId(userToChatId);
-
-//     let messages = await Message.aggregate([
-//       {
-//         $match: {
-//           $or: [
-//             { receiverId: userToChatObjectId, senderId: senderId },
-//             { receiverId: senderId, senderId: userToChatObjectId }
-//           ],
-//           offer: { $exists: true, $ne: null }
-//         }
-//       },
-//       {
-//         $lookup: {
-//           from: 'offers', // the name of the Offer collection
-//           localField: 'offer', // the field in the Message documents
-//           foreignField: '_id', // the field in the Offer documents
-//           as: 'offer' // the field in the output documents
-//         }
-//       },
-//       { $unwind: '$offer' }, // flatten the offer array
-//       {
-//         $sort: { 'offer.offerAmount': -1 } // sort by offer amount in descending order
-//       },
-//       {
-//         $group: {
-//           _id: '$offer.product', // group by product id
-//           offerAmount: { $first: '$offer.offerAmount' }, // get the first (highest) offer amount
-//           product: { $first: '$offer.product' } // get the product id
-//         }
-//       }
-//     ]);
-
-//     if (!messages) {
-//       return res.json([]);
-//     }
-
-//     // populate product details
-//     console.log(messages)
-//     for (let message of messages) {
-//       message.product = await Product.findById(message.product).select('price product _id');
-//     }
-
-//     // map over the messages and return an object with the offer amount and the product details
-//     res.json(messages.map(message => ({
-//       offerAmount: message.offerAmount,
-//       product: message.product
-//     })));
-//   } catch (error) {
-//     console.error(error);
-//     // handle error
-//   }
-// });
-
-
-
 
 const getOffers = asyncHandler(async (req, res) => {
   try {
       const { selectedUserId: userToChatId } = req.params;
       const senderId = req.user._id;
       const userToChatObjectId = new mongoose.Types.ObjectId(userToChatId);
-    //   console.log(senderId, userToChatObjectId);
       let messages = await Message.find({
           $or: [
             { receiverId: userToChatObjectId, senderId: senderId },
@@ -183,7 +122,6 @@ const getOffers = asyncHandler(async (req, res) => {
       })));
   } catch (error) {
       console.error(error);
-      // handle error
   }
 });
 
