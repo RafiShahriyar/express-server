@@ -74,6 +74,46 @@ const getProducts = async (req, res) => {
   }
 };
 
+// Get products by seller
+
+const getProductsBySeller = async (req, res) => {
+  const { sellerId } = req.params;
+
+  try {
+    const products = await Items.find({ uploadedBy: sellerId })
+      .select("_id id image product category price specifications stock")
+      .populate("uploadedBy", "username");
+
+    res.json(products);
+  } catch (error) {
+    console.error("Error fetching products by seller:", error);
+    res.status(500).json({ message: "Error fetching products" });
+  }
+};
+
+// Update product
+const updateProduct = async (req, res) => {
+  const { productId } = req.params;
+  const { name, price, stock } = req.body;
+
+  try {
+    const updatedProduct = await Items.findByIdAndUpdate(
+      productId,
+      { $set: { product: name, price, stock } },
+      { new: true }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(updatedProduct);
+  } catch (error) {
+    console.error("Failed to update product:", error);
+    res.status(500).json({ message: "Error updating product" });
+  }
+};
+
 const deleteProduct = async (req, res) => {
   const { id } = req.params;
   console.log(id);
@@ -202,4 +242,6 @@ module.exports = {
   getProductById,
   getProductByUser,
   getProductsByCategory,
+  getProductsBySeller,
+  updateProduct,
 };

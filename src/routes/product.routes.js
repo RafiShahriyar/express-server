@@ -11,6 +11,8 @@ const {
   getProductById,
   getProductByUser,
   getProductsByCategory,
+  getProductsBySeller,
+  updateProduct,
 } = require("../controller/product.controller");
 
 // importing the product middleware functions
@@ -37,6 +39,12 @@ router.get("/get-product/:productID", getProductById);
 
 //get product by uploaded by user
 router.get("/get-product-by-user/:userID", getProductByUser);
+
+// Route to fetch products by a specific seller
+router.get("/products-by-seller/:sellerId", getProductsBySeller);
+
+// Update product
+router.put("/update-product/:productId", updateProduct);
 
 // get product by category
 router.get("/get-productsByCat/:category", getProductsByCategory);
